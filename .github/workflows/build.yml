@@ -21,10 +21,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
-      - name: 安装构建工具
-        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0"
+      # runner 镜像自带 Android SDK，直接补装需要的版本。
+      # 不用 android-actions/setup-android，它会跑 sdkmanager tools，而该包已被 Google 下架。
+      - name: 准备 Android SDK
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          CMDLINE="$(ls -d "$SDK"/cmdline-tools/*/bin | head -n 1)"
+          echo "$CMDLINE" >> "$GITHUB_PATH"
+          yes | "$CMDLINE/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$CMDLINE/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0"
 
       # 配置了仓库密钥就用它签名，没配则退回临时调试密钥，保证任何人都能出包
       - name: 准备签名密钥
