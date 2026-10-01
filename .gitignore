@@ -1,0 +1,13 @@
+# 构建中间产物与最终产物，产物走 Release
+build/
+dist/
+
+# 签名相关，绝不入库
+keystore/
+*.keystore
+*.jks
+
+# 本机配置
+local.properties
+.idea/
+.vscode/

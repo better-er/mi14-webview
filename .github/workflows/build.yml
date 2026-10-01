@@ -1,0 +1,70 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: 安装构建工具
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0"
+
+      # 配置了仓库密钥就用它签名，没配则退回临时调试密钥，保证任何人都能出包
+      - name: 准备签名密钥
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            {
+              echo "KEYSTORE=$RUNNER_TEMP/release.keystore"
+              echo "KS_ALIAS=$KEY_ALIAS"
+              echo "KS_PASS=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo "使用仓库密钥签名"
+          else
+            echo "未配置 KEYSTORE_BASE64，改用临时调试密钥签名"
+          fi
+
+      - name: 确定版本号
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION_NAME=1.0" >> "$GITHUB_ENV"
+          fi
+          echo "VERSION_CODE=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
+      - name: 构建 APK
+        run: bash build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-version
+          path: dist/*.apk
+
+      - name: 发布 Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DSH</string>
+    <string name="url_title">设置访问地址</string>
+    <string name="url_hint">https://example.com</string>
+    <string name="ssl_title">证书不受信任</string>
+    <string name="ssl_message">%1$s\n\n该站点使用自签名证书。确认是内网站点后可继续访问。</string>
+    <string name="ssl_continue">继续访问</string>
+    <string name="ssl_change_url">换地址</string>
+    <string name="ssl_cancel">取消</string>
+    <string name="auth_title">%1$s 需要登录</string>
+    <string name="auth_user">用户名</string>
+    <string name="auth_pass">密码</string>
+</resources>
